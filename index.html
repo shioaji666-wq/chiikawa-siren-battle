@@ -185,6 +185,8 @@
         const status = document.getElementById("status");
         const controller = document.getElementById("mobile-controller");
 
+        let godotWantsController = false;
+
         function isCoarseTouchDevice() {
             return (
                 navigator.maxTouchPoints > 0
@@ -194,14 +196,14 @@
 
         function shouldShowController() {
             return (
-                isCoarseTouchDevice()
+                godotWantsController
+                && isCoarseTouchDevice()
                 && window.innerHeight > window.innerWidth
             );
         }
 
-        // BattleMainから呼ばれても壊れないよう互換関数だけ残す。
-        // 表示判定自体はHTML側で自動判定する。
-        window.chiikawaSetControllerVisible = function(_visible) {
+        window.chiikawaSetControllerVisible = function(visible) {
+            godotWantsController = !!visible;
             updateLayout();
         };
 
@@ -263,9 +265,12 @@
         }
 
         function fireMobileAction(action) {
-            if (
-                typeof window.chiikawaGodotInput === "function"
-            ) {
+            /*
+             * GodotのJavaScriptBridge callbackはブラウザ上で
+             * typeof === "function" と判定されない環境があるため、
+             * truthyかどうかだけで確認して直接呼ぶ。
+             */
+            if (window.chiikawaGodotInput) {
                 window.chiikawaGodotInput(action);
             }
         }
@@ -329,7 +334,7 @@
 
         updateLayout();
 
-        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":30863380,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
+        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":30864260,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
 
         engine.startGame({
             canvas: canvas,
