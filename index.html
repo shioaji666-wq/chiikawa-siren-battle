@@ -187,17 +187,34 @@
 
         let godotWantsController = false;
 
-        function isCoarseTouchDevice() {
+        function isLikelyMobileDevice() {
+            const ua = navigator.userAgent || "";
+            const platform = navigator.platform || "";
+
+            const mobileUa = /iPhone|iPod|Android|Mobile|IEMobile|Opera Mini/i.test(ua);
+
+            // iPadOSはデスクトップ系UAを返すことがあるため、
+            // Mac系platform + 複数タッチでもモバイル扱いにする。
+            const iPadLike = (
+                /MacIntel/i.test(platform)
+                && navigator.maxTouchPoints > 1
+            );
+
+            const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+            const hasTouch = navigator.maxTouchPoints > 0;
+
             return (
-                navigator.maxTouchPoints > 0
-                || window.matchMedia("(pointer: coarse)").matches
+                mobileUa
+                || iPadLike
+                || coarsePointer
+                || hasTouch
             );
         }
 
         function shouldShowController() {
             return (
                 godotWantsController
-                && isCoarseTouchDevice()
+                && isLikelyMobileDevice()
                 && window.innerHeight > window.innerWidth
             );
         }
@@ -246,7 +263,7 @@
              * スマホ縦持ちは画面に収めるため小数倍率で縮小。
              */
             let scale;
-            if (!isCoarseTouchDevice() && fitScale >= 1.0) {
+            if (!isLikelyMobileDevice() && fitScale >= 1.0) {
                 scale = Math.max(1, Math.floor(fitScale));
             } else {
                 scale = fitScale;
