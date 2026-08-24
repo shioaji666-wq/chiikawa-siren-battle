@@ -7,7 +7,7 @@
     <meta http-equiv="Expires" content="0">
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     >
     <title>ChiikawaSirenBattle</title>
     <link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
@@ -117,7 +117,7 @@
             font-weight: 700;
             line-height: 1;
             -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
+            touch-action: none;
             cursor: pointer;
         }
 
@@ -143,8 +143,9 @@
       // even when GAME_VERSION stays the same. Cache Storage / Service Workers are cleared only
       // when a newer build is detected. IndexedDB (Godot user:// save) is intentionally preserved.
       (function chiikawaInstallLatestBuildGuard(){
-        const GAME_VERSION = "1.2";
-        const BUILD_ID = "20260824-r4";
+        const GAME_VERSION = "1.3";
+        const BUILD_ID = "20260824-v13-r8";
+        window.CHIikawaBuildId = BUILD_ID;
         const EMBEDDED_BUILD_TOKEN = GAME_VERSION + "|" + BUILD_ID;
         let checking = false;
         let lastCheckAt = 0;
@@ -248,7 +249,7 @@
         </div>
     </div>
 
-    <script src="index.js"></script>
+    <script src="index.js?build=20260824-v13-r8"></script>
     <script>
         const BASE_WIDTH = 640;
         const BASE_HEIGHT = 480;
@@ -355,6 +356,50 @@
             canvas.style.height = `${cssHeight}px`;
         }
 
+
+        // iOS Safari のピンチ／ジェスチャ拡大をゲーム画面では抑止する。
+        ["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
+            document.addEventListener(eventName, (event) => {
+                event.preventDefault();
+            }, { passive: false });
+        });
+        document.addEventListener("touchmove", (event) => {
+            if (event.touches && event.touches.length > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
+        window.chiikawaPickSaveFile = function() {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".json,application/json";
+            input.style.display = "none";
+
+            input.addEventListener("change", () => {
+                const file = input.files && input.files[0];
+                if (!file) {
+                    input.remove();
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = () => {
+                    if (window.chiikawaGodotSaveImport) {
+                        window.chiikawaGodotSaveImport(
+                            file.name,
+                            String(reader.result || "")
+                        );
+                    }
+                    input.remove();
+                };
+                reader.onerror = () => input.remove();
+                reader.readAsText(file, "utf-8");
+            }, { once: true });
+
+            document.body.appendChild(input);
+            input.click();
+        };
+
         function fireMobileAction(action) {
             /*
              * GodotのJavaScriptBridge callbackはブラウザ上で
@@ -425,7 +470,40 @@
 
         updateLayout();
 
-        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":30884604,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
+        // GitHub Pages/browser HTTP cache guard for Godot runtime assets.
+        // Cache Storage and Service Worker are cleared above, but the browser's normal HTTP
+        // cache cannot be programmatically cleared. Give each Godot runtime fetch a build-specific
+        // URL so .wasm/.pck/etc. are revalidated as new resources on every deployment.
+        (function chiikawaInstallGodotAssetCacheBuster(){
+            const BUILD_ID = String(window.CHIikawaBuildId || "20260824-v13-r8");
+            const nativeFetch = window.fetch.bind(window);
+            const assetPattern = /\.(?:wasm|pck|js|zip|data)(?:$|[?#])/i;
+
+            window.fetch = function(input, init) {
+                try {
+                    const rawUrl = (typeof input === "string")
+                        ? input
+                        : (input && input.url ? input.url : "");
+                    if (rawUrl) {
+                        const u = new URL(rawUrl, location.href);
+                        if (u.origin === location.origin && assetPattern.test(u.pathname)) {
+                            u.searchParams.set("build", BUILD_ID);
+                            if (typeof input === "string") {
+                                input = u.toString();
+                            } else if (input instanceof Request) {
+                                input = new Request(u.toString(), input);
+                            }
+                            init = Object.assign({}, init || {}, { cache: "no-store" });
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Godot asset cache-buster skipped", e);
+                }
+                return nativeFetch(input, init);
+            };
+        })();
+
+        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":30908144,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
 
         engine.startGame({
             canvas: canvas,
