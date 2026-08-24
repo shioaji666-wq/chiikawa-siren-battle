@@ -133,6 +133,30 @@
             }
         }
     </style>
+
+    <script>
+      // Ver1.3+: GitHub Pages / Service Worker stale-build guard.
+      // version.txt is fetched from the network without cache. If an old cached page is controlling
+      // the tab, unregister only Service Workers (IndexedDB/user:// save is not deleted) and reload once.
+      (async function chiikawaEnsureLatestBuild(){
+        const EMBEDDED_BUILD = "1.2";
+        try {
+          const res = await fetch("version.txt?t=" + Date.now(), { cache: "no-store" });
+          if (!res.ok) return;
+          const latest = (await res.text()).trim();
+          if (!latest || latest === EMBEDDED_BUILD) return;
+          if ("serviceWorker" in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(r => r.unregister()));
+          }
+          const u = new URL(location.href);
+          u.searchParams.set("build", latest);
+          location.replace(u.toString());
+        } catch (e) {
+          console.warn("version check skipped", e);
+        }
+      })();
+    </script>
 </head>
 <body>
     <div id="app">
@@ -351,7 +375,7 @@
 
         updateLayout();
 
-        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":30871956,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
+        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":30884604,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
 
         engine.startGame({
             canvas: canvas,
