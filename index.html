@@ -2,6 +2,9 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
@@ -135,26 +138,73 @@
     </style>
 
     <script>
-      // Ver1.3+: GitHub Pages / Service Worker stale-build guard.
-      // version.txt is fetched from the network without cache. If an old cached page is controlling
-      // the tab, unregister only Service Workers (IndexedDB/user:// save is not deleted) and reload once.
-      (async function chiikawaEnsureLatestBuild(){
-        const EMBEDDED_BUILD = "1.2";
-        try {
-          const res = await fetch("version.txt?t=" + Date.now(), { cache: "no-store" });
-          if (!res.ok) return;
-          const latest = (await res.text()).trim();
-          if (!latest || latest === EMBEDDED_BUILD) return;
+      // GitHub Pages stale-build guard.
+      // GAME_VERSION is only the user-visible version. BUILD_ID changes on every web deployment,
+      // even when GAME_VERSION stays the same. Cache Storage / Service Workers are cleared only
+      // when a newer build is detected. IndexedDB (Godot user:// save) is intentionally preserved.
+      (function chiikawaInstallLatestBuildGuard(){
+        const GAME_VERSION = "1.2";
+        const BUILD_ID = "20260824-r4";
+        const EMBEDDED_BUILD_TOKEN = GAME_VERSION + "|" + BUILD_ID;
+        let checking = false;
+        let lastCheckAt = 0;
+
+        async function fetchLatestBuildToken() {
+          const separator = location.search ? "&" : "?";
+          const url = "version.txt?t=" + Date.now();
+          const res = await fetch(url, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache" }
+          });
+          if (!res.ok) return "";
+          return (await res.text()).trim();
+        }
+
+        async function clearWebRuntimeCachesPreservingSave() {
+          // Cache Storage is safe to clear: Godot Web user:// is stored in IndexedDB, not Cache Storage.
+          if ("caches" in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+          }
           if ("serviceWorker" in navigator) {
             const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map(r => r.unregister()));
+            await Promise.all(regs.map(reg => reg.unregister()));
           }
-          const u = new URL(location.href);
-          u.searchParams.set("build", latest);
-          location.replace(u.toString());
-        } catch (e) {
-          console.warn("version check skipped", e);
         }
+
+        async function checkForLatestBuild(force) {
+          const now = Date.now();
+          if (checking) return;
+          if (!force && now - lastCheckAt < 5000) return;
+          checking = true;
+          lastCheckAt = now;
+          try {
+            const latest = await fetchLatestBuildToken();
+            if (!latest || latest === EMBEDDED_BUILD_TOKEN) return;
+
+            await clearWebRuntimeCachesPreservingSave();
+
+            const u = new URL(location.href);
+            u.searchParams.set("build", latest.replace(/[^0-9A-Za-z._-]/g, "-"));
+            u.searchParams.set("refresh", String(Date.now()));
+            location.replace(u.toString());
+          } catch (e) {
+            console.warn("latest build check skipped", e);
+          } finally {
+            checking = false;
+          }
+        }
+
+        // Initial load, browser back/forward restoration, tab reuse, and returning to an open tab.
+        checkForLatestBuild(true);
+        window.addEventListener("pageshow", () => checkForLatestBuild(true));
+        window.addEventListener("focus", () => checkForLatestBuild(false));
+        document.addEventListener("visibilitychange", () => {
+          if (!document.hidden) checkForLatestBuild(false);
+        });
+
+        // Also catches a tab that is simply left open while a new build is deployed.
+        window.setInterval(() => checkForLatestBuild(false), 60000);
       })();
     </script>
 </head>
