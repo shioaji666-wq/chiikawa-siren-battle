@@ -144,7 +144,7 @@
       // when a newer build is detected. IndexedDB (Godot user:// save) is intentionally preserved.
       (function chiikawaInstallLatestBuildGuard(){
         const GAME_VERSION = "1.3";
-        const BUILD_ID = "20260825-v13-r12";
+        const BUILD_ID = "20260827-v13-r13";
         window.CHIikawaBuildId = BUILD_ID;
         const EMBEDDED_BUILD_TOKEN = GAME_VERSION + "|" + BUILD_ID;
         let checking = false;
@@ -249,7 +249,7 @@
         </div>
     </div>
 
-    <script src="index.js?build=20260825-v13-r12"></script>
+    <script src="index.js?build=20260827-v13-r13"></script>
     <script>
         const BASE_WIDTH = 640;
         const BASE_HEIGHT = 480;
@@ -357,24 +357,38 @@
         }
 
 
-        // iOS Safari のピンチ／ジェスチャ拡大をゲーム画面では抑止する。
+        // iOS Safariのページズームを、canvas内外を問わずcapture段階で抑止する。
+        // touchendだけではSafariがズームを先に確定する場合があるため、
+        // 2回目のtouchstart自体を止める。通常の単発タップは通す。
+        let lastTouchStartAt = 0;
+        document.addEventListener("touchstart", (event) => {
+            const now = Date.now();
+            const isMultiTouch = event.touches && event.touches.length > 1;
+            const isRapidSecondTap = !isMultiTouch && (now - lastTouchStartAt) <= 360;
+            if (isMultiTouch || isRapidSecondTap) {
+                event.preventDefault();
+            }
+            if (!isMultiTouch) {
+                lastTouchStartAt = now;
+            }
+        }, { passive: false, capture: true });
+
         ["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
             document.addEventListener(eventName, (event) => {
                 event.preventDefault();
-            }, { passive: false });
+            }, { passive: false, capture: true });
         });
+
         document.addEventListener("touchmove", (event) => {
             if (event.touches && event.touches.length > 1) {
                 event.preventDefault();
             }
-        }, { passive: false });
+        }, { passive: false, capture: true });
 
-        // Safari/Chromeのダブルタップ拡大もページ全体で抑止する。
-        // Godot canvas外の余白を連打した場合もズームさせない。
         let lastTouchEndAt = 0;
         document.addEventListener("touchend", (event) => {
             const now = Date.now();
-            if (now - lastTouchEndAt <= 350) {
+            if (now - lastTouchEndAt <= 360) {
                 event.preventDefault();
             }
             lastTouchEndAt = now;
@@ -382,6 +396,7 @@
 
         document.addEventListener("dblclick", (event) => {
             event.preventDefault();
+            event.stopPropagation();
         }, { passive: false, capture: true });
 
         window.chiikawaPickSaveFile = function() {
@@ -490,7 +505,7 @@
         // cache cannot be programmatically cleared. Give each Godot runtime fetch a build-specific
         // URL. The same build is cached locally; a new deployment uses a different URL.
         (function chiikawaInstallGodotAssetCacheBuster(){
-            const BUILD_ID = String(window.CHIikawaBuildId || "20260825-v13-r12");
+            const BUILD_ID = String(window.CHIikawaBuildId || "20260827-v13-r13");
             const nativeFetch = window.fetch.bind(window);
             const assetPattern = /\.(?:wasm|pck|js|zip|data)(?:$|[?#])/i;
 
@@ -520,7 +535,7 @@
             };
         })();
 
-        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":30899824,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
+        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":31516872,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
 
         engine.startGame({
             canvas: canvas,
