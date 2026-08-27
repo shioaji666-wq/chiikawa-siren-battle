@@ -143,8 +143,8 @@
       // even when GAME_VERSION stays the same. Cache Storage / Service Workers are cleared only
       // when a newer build is detected. IndexedDB (Godot user:// save) is intentionally preserved.
       (function chiikawaInstallLatestBuildGuard(){
-        const GAME_VERSION = "1.3";
-        const BUILD_ID = "20260827-v13-r13";
+        const GAME_VERSION = "1.4";
+        const BUILD_ID = "20260827-v14-r1";
         window.CHIikawaBuildId = BUILD_ID;
         const EMBEDDED_BUILD_TOKEN = GAME_VERSION + "|" + BUILD_ID;
         let checking = false;
@@ -249,7 +249,7 @@
         </div>
     </div>
 
-    <script src="index.js?build=20260827-v13-r13"></script>
+    <script src="index.js?build=20260827-v14-r1"></script>
     <script>
         const BASE_WIDTH = 640;
         const BASE_HEIGHT = 480;
@@ -505,7 +505,7 @@
         // cache cannot be programmatically cleared. Give each Godot runtime fetch a build-specific
         // URL. The same build is cached locally; a new deployment uses a different URL.
         (function chiikawaInstallGodotAssetCacheBuster(){
-            const BUILD_ID = String(window.CHIikawaBuildId || "20260827-v13-r13");
+            const BUILD_ID = String(window.CHIikawaBuildId || "20260827-v14-r1");
             const nativeFetch = window.fetch.bind(window);
             const assetPattern = /\.(?:wasm|pck|js|zip|data)(?:$|[?#])/i;
 
@@ -535,7 +535,7 @@
             };
         })();
 
-        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":31516872,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
+        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":31416728,"index.wasm":37900721},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
 
         engine.startGame({
             canvas: canvas,
