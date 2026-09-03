@@ -144,7 +144,7 @@
       // when a newer build is detected. IndexedDB (Godot user:// save) is intentionally preserved.
       (function chiikawaInstallLatestBuildGuard(){
         const GAME_VERSION = "2.0";
-        const BUILD_ID = "20260903-v23-dev44-webguard";
+        const BUILD_ID = "20260903-v24-dev45-hard-force-unlock";
         window.CHIikawaBuildId = BUILD_ID;
         const EMBEDDED_BUILD_TOKEN = GAME_VERSION + "|" + BUILD_ID;
         let checking = false;
@@ -523,7 +523,7 @@
         // cache cannot be programmatically cleared. Give each Godot runtime fetch a build-specific
         // URL. The same build is cached locally; a new deployment uses a different URL.
         (function chiikawaInstallGodotAssetCacheBuster(){
-            const BUILD_ID = String(window.CHIikawaBuildId || "20260903-v23-dev44-webguard");
+            const BUILD_ID = String(window.CHIikawaBuildId || "20260903-v24-dev45-hard-force-unlock");
             const nativeFetch = window.fetch.bind(window);
             const assetPattern = /\.(?:wasm|pck|js|zip|data)(?:$|[?#])/i;
 
@@ -553,7 +553,7 @@
             };
         })();
 
-        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":31716516,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
+        const engine = new Engine({"args":[],"canvasResizePolicy":0,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":31740824,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4});
 
         engine.startGame({
             canvas: canvas,
