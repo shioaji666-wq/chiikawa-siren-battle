@@ -143,8 +143,8 @@
       // even when GAME_VERSION stays the same. Cache Storage / Service Workers are cleared only
       // when a newer build is detected. IndexedDB (Godot user:// save) is intentionally preserved.
       (function chiikawaInstallLatestBuildGuard(){
-        const GAME_VERSION = "1.4";
-        const BUILD_ID = "20260827-v14-r5";
+        const GAME_VERSION = "2.0";
+        const BUILD_ID = "20260903-v23-dev44-webguard";
         window.CHIikawaBuildId = BUILD_ID;
         const EMBEDDED_BUILD_TOKEN = GAME_VERSION + "|" + BUILD_ID;
         let checking = false;
@@ -181,7 +181,25 @@
           lastCheckAt = now;
           try {
             const latest = await fetchLatestBuildToken();
-            if (!latest || latest === EMBEDDED_BUILD_TOKEN) return;
+            if (!latest || latest === EMBEDDED_BUILD_TOKEN) {
+              sessionStorage.removeItem("chiikawa-build-reload-target");
+              return;
+            }
+
+            // Safety guard: a stale cached HTML may keep reporting an older embedded token even
+            // after a cache-busting reload. Never reload endlessly for the same target build.
+            const reloadKey = "chiikawa-build-reload-target";
+            const previousTarget = sessionStorage.getItem(reloadKey) || "";
+            if (previousTarget === latest) {
+              console.warn(
+                "Latest-build guard stopped a reload loop. embedded=",
+                EMBEDDED_BUILD_TOKEN,
+                "latest=",
+                latest
+              );
+              return;
+            }
+            sessionStorage.setItem(reloadKey, latest);
 
             await clearWebRuntimeCachesPreservingSave();
 
@@ -505,7 +523,7 @@
         // cache cannot be programmatically cleared. Give each Godot runtime fetch a build-specific
         // URL. The same build is cached locally; a new deployment uses a different URL.
         (function chiikawaInstallGodotAssetCacheBuster(){
-            const BUILD_ID = String(window.CHIikawaBuildId || "20260827-v14-r5");
+            const BUILD_ID = String(window.CHIikawaBuildId || "20260903-v23-dev44-webguard");
             const nativeFetch = window.fetch.bind(window);
             const assetPattern = /\.(?:wasm|pck|js|zip|data)(?:$|[?#])/i;
 
