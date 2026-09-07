@@ -1,1 +1,1 @@
-2.0|20260907-v42-dev66-hard-debug-repair-batch
+2.0|20260907-v43-dev68-multihit-header-color-fix
