@@ -1,1 +1,1 @@
-2.0|20260907-v42-dev65-hard-ui-value-template-fix
+2.0|20260907-v42-dev66-hard-debug-repair-batch
